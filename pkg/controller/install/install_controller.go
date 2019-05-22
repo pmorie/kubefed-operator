@@ -3,12 +3,13 @@ package install
 import (
 	"context"
 	"flag"
-
+	"strings"
 	mf "github.com/jcrossley3/manifestival"
 	servingv1alpha1 "github.com/pmorie/kubefed-operator/pkg/apis/operator/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -108,11 +109,25 @@ func (r *ReconcileInstall) Reconcile(request reconcile.Request) (reconcile.Resul
 	return reconcile.Result{}, nil
 }
 
+func ResourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer {
+        return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+                if (scope == servingv1alpha1.InstallationScopeNamespaceScoped) {
+		switch strings.ToLower(u.GetKind()) {
+		case "clusterrole":
+		case "clusterrolebinding":
+		return nil
+		}
+		}
+		return u
+	}
+}
+
 // Apply the embedded resources
 func (r *ReconcileInstall) install(instance *servingv1alpha1.Install) error {
 	// Transform resources as appropriate
 	fns := []mf.Transformer{mf.InjectOwner(instance)}
 	fns = append(fns, mf.InjectNamespace(instance.Namespace))
+	fns = append(fns, ResourceScopeFilter(instance.Spec.Scope))
 
 	r.config.Transform(fns...)
 
