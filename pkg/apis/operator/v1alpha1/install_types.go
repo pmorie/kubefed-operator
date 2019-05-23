@@ -44,8 +44,8 @@ type Install struct {
 type InstallationScope string
 
 var (
-	InstallationScopeNamespaceScoped InstallationScope = "NamespaceScoped"
-	InstallationScopeClusterScoped   InstallationScope = "ClusterScoped"
+	InstallationScopeNamespaceScoped InstallationScope = "Namespaced"
+	InstallationScopeClusterScoped   InstallationScope = "Cluster"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
