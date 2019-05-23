@@ -109,7 +109,7 @@ func (r *ReconcileInstall) Reconcile(request reconcile.Request) (reconcile.Resul
 	return reconcile.Result{}, nil
 }
 
-func ResourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer {
+func resourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer {
         return func(u *unstructured.Unstructured) *unstructured.Unstructured {
                 if (scope == servingv1alpha1.InstallationScopeNamespaceScoped) {
 		switch strings.ToLower(u.GetKind()) {
@@ -122,13 +122,35 @@ func ResourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer
 	}
 }
 
+func resourceEnvUpdate(scope servingv1alpha1.InstallationScope) mf.Transformer {
+             return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+                if (scope == servingv1alpha1.InstallationScopeNamespaceScoped) {
+		switch strings.ToLower(u.GetKind()) {
+		case "deployment":
+		 if envs, ok, err := unstructured.NestedSlice(u.Object,
+		   "spec", "template", "spec", "containers[0]", "env"); ok {
+		   fse := map[string]string{"name":"DEFAULT_FEDERATION_SCOPE", "value": "Namespaced"}
+		   envs = append(envs, fse)
+		   err = unstructured.SetNestedSlice(u.Object, envs, "spec",
+		   		   "template", "spec", "containers[0]", "env")
+		   if err != nil {
+		        reqLogger := log.WithValues("Instance.Namespace", u.GetNamespace(), "Instance.Name", u.GetName())
+
+		        reqLogger.Info("Failed to update the environment")  
+		   }
+		   }
+		}
+		}
+		return u
+	}
+}
 // Apply the embedded resources
 func (r *ReconcileInstall) install(instance *servingv1alpha1.Install) error {
 	// Transform resources as appropriate
 	fns := []mf.Transformer{mf.InjectOwner(instance)}
 	fns = append(fns, mf.InjectNamespace(instance.Namespace))
-	fns = append(fns, ResourceScopeFilter(instance.Spec.Scope))
-
+	fns = append(fns, resourceScopeFilter(instance.Spec.Scope))
+	fns = append(fns, resourceEnvUpdate(instance.Spec.Scope))
 	r.config.Transform(fns...)
 
 	// Apply the resources in the YAML file

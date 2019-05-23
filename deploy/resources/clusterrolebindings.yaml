@@ -10,5 +10,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: federation-controller
-  namespace: '{{ .Release.Namespace }}'
-  
+  namespace: ''
