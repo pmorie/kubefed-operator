@@ -3,13 +3,13 @@ package install
 import (
 	"context"
 	"flag"
-	"strings"
 	mf "github.com/jcrossley3/manifestival"
 	servingv1alpha1 "github.com/pmorie/kubefed-operator/pkg/apis/operator/v1alpha1"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -110,55 +110,55 @@ func (r *ReconcileInstall) Reconcile(request reconcile.Request) (reconcile.Resul
 }
 
 func resourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer {
-        return func(u *unstructured.Unstructured) *unstructured.Unstructured {
-                if (scope == servingv1alpha1.InstallationScopeNamespaceScoped) {
-		switch strings.ToLower(u.GetKind()) {
-		case "clusterrole":
-		case "clusterrolebinding":
-		return nil
-		}
+	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+		if scope == servingv1alpha1.InstallationScopeNamespaceScoped {
+			switch strings.ToLower(u.GetKind()) {
+			case "clusterrole":
+			case "clusterrolebinding":
+				return nil
+			}
 		}
 		return u
 	}
 }
 
 func resourceEnvUpdate(scope servingv1alpha1.InstallationScope) mf.Transformer {
-             return func(u *unstructured.Unstructured) *unstructured.Unstructured {
-                if (scope == servingv1alpha1.InstallationScopeNamespaceScoped) {
-		switch strings.ToLower(u.GetKind()) {
-		case "deployment":
-		 if envs, ok, err := unstructured.NestedSlice(u.Object,
-		   "spec", "template", "spec", "containers[0]", "env"); ok {
-		   fse := map[string]string{"name":"DEFAULT_FEDERATION_SCOPE", "value": "Namespaced"}
-		   envs = append(envs, fse)
-		   err = unstructured.SetNestedSlice(u.Object, envs, "spec",
-		   		   "template", "spec", "containers[0]", "env")
-		   if err != nil {
-		        reqLogger := log.WithValues("Instance.Namespace", u.GetNamespace(), "Instance.Name", u.GetName())
+	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+		if scope == servingv1alpha1.InstallationScopeNamespaceScoped {
+			switch strings.ToLower(u.GetKind()) {
+			case "deployment":
+				if envs, ok, err := unstructured.NestedSlice(u.Object,
+					"spec", "template", "spec", "containers[0]", "env"); ok {
+					fse := map[string]string{"name": "DEFAULT_FEDERATION_SCOPE", "value": "Namespaced"}
+					envs = append(envs, fse)
+					err = unstructured.SetNestedSlice(u.Object, envs, "spec",
+						"template", "spec", "containers[0]", "env")
+					if err != nil {
+						reqLogger := log.WithValues("Instance.Namespace", u.GetNamespace(), "Instance.Name", u.GetName())
 
-		        reqLogger.Info("Failed to update the environment")  
-		   }
-		   }
-		}
+						reqLogger.Info("Failed to update the environment")
+					}
+				}
+			}
 		}
 		return u
 	}
 }
 
 func resourceNamespaceUpdate(scope servingv1alpha1.InstallationScope) mf.Transformer {
-        return func(u *unstructured.Unstructured) *unstructured.Unstructured {
-                if (scope == servingv1alpha1.InstallationScopeClusterScoped) {
-                   switch strings.ToLower(u.GetKind()) {
-                   case "clusterrolebinding":
-                   err := unstructured.SetNestedField(u.Object, u.GetNamespace(),"subjects", "namespace")
-                   if err != nil {
-                   reqLogger := log.WithValues("Instance.Namespace", u.GetNamespace(), "Instance.Name", u.GetName())
-                   reqLogger.Info("Failed to set the namespace nested field")
-                   }
-                   }
-                   }
-                   return u
-                }
+	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+		if scope == servingv1alpha1.InstallationScopeClusterScoped {
+			switch strings.ToLower(u.GetKind()) {
+			case "clusterrolebinding":
+				err := unstructured.SetNestedField(u.Object, u.GetNamespace(), "subjects", "namespace")
+				if err != nil {
+					reqLogger := log.WithValues("Instance.Namespace", u.GetNamespace(), "Instance.Name", u.GetName())
+					reqLogger.Info("Failed to set the namespace nested field")
+				}
+			}
+		}
+		return u
+	}
 
 }
 
@@ -169,7 +169,7 @@ func (r *ReconcileInstall) install(instance *servingv1alpha1.Install) error {
 	fns = append(fns, mf.InjectNamespace(instance.Namespace))
 	fns = append(fns, resourceScopeFilter(instance.Spec.Scope))
 	fns = append(fns, resourceEnvUpdate(instance.Spec.Scope))
-    fns = append(fns, resourceNamespaceUpdate(instance.Spec.Scope))
+	fns = append(fns, resourceNamespaceUpdate(instance.Spec.Scope))
 	r.config.Transform(fns...)
 
 	// Apply the resources in the YAML file
