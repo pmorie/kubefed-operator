@@ -144,6 +144,24 @@ func resourceEnvUpdate(scope servingv1alpha1.InstallationScope) mf.Transformer {
 		return u
 	}
 }
+
+func resourceNamespaceUpdate(scope servingv1alpha1.InstallationScope) mf.Transformer {
+        return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+                if (scope == servingv1alpha1.InstallationScopeClusterScoped) {
+                   switch strings.ToLower(u.GetKind()) {
+                   case "clusterrolebinding":
+                   err := unstructured.SetNestedField(u.Object, u.GetNamespace(),"subjects", "namespace")
+                   if err != nil {
+                   reqLogger := log.WithValues("Instance.Namespace", u.GetNamespace(), "Instance.Name", u.GetName())
+                   reqLogger.Info("Failed to set the namespace nested field")
+                   }
+                   }
+                   }
+                   return u
+                }
+
+}
+
 // Apply the embedded resources
 func (r *ReconcileInstall) install(instance *servingv1alpha1.Install) error {
 	// Transform resources as appropriate
@@ -151,6 +169,7 @@ func (r *ReconcileInstall) install(instance *servingv1alpha1.Install) error {
 	fns = append(fns, mf.InjectNamespace(instance.Namespace))
 	fns = append(fns, resourceScopeFilter(instance.Spec.Scope))
 	fns = append(fns, resourceEnvUpdate(instance.Spec.Scope))
+    fns = append(fns, resourceNamespaceUpdate(instance.Spec.Scope))
 	r.config.Transform(fns...)
 
 	// Apply the resources in the YAML file
