@@ -2,209 +2,14 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: |-
-      [
-        {
-          "apiVersion": "clusterregistry.k8s.io/v1alpha1",
-          "kind": "Cluster",
-          "metadata": {
-            "name": "cluster-name"
-          },
-          "spec": {
-            "authInfo": {},
-            "kubernetesApiEndpoints": {
-              "serverEndpoints": [
-                {
-                  "clientCIDR": "0.0.0.0/0",
-                  "serverAddress": "https://cluster-name.example.com:6443"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "apiVersion": "core.federation.k8s.io/v1alpha1",
-          "kind": "FederatedCluster",
-          "metadata": {
-            "name": "cluster-name"
-          },
-          "spec": {
-            "clusterRef": {
-              "name": "cluster-name"
-            },
-            "secretRef": {
-              "name": "<name-of-secret>"
-            }
-          }
-        },
-        {
-          "apiVersion": "core.federation.k8s.io/v1alpha1",
-          "kind": "FederatedTypeConfig",
-          "metadata": {
-            "name": "deployments.extensions"
-          },
-          "spec": {
-            "federatedType": {
-              "group": "types.federation.k8s.io",
-              "kind": "FederatedDeployment",
-              "pluralName": "federateddeployments",
-              "version": "v1alpha1"
-            },
-            "namespaced": true,
-            "propagationEnabled": true,
-            "target": {
-              "group": "extensions",
-              "kind": "Deployment",
-              "pluralName": "deployments",
-              "version": "v1beta1"
-            }
-          }
-        },
-        {
-          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
-          "kind": "Domain",
-          "metadata": {
-            "name": "test-domain"
-            },
-          "spec": {
-            "domain": "your.domain.name"
-            }
-        },
-        {
-          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
-          "kind": "ServiceDNSRecord",
-          "metadata": {
-            "name": "test-service"
-            },
-          "spec": {
-            "domainRef": "test-domain",
-            "recordTTL": 300
-            }
-        },
-        {
-          "apiVersion": "federatedservicestatuses.core.federation.k8s.io/v1alpha1",
-          "kind": "FederatedServiceStatus",
-          "metadata": {
-            "name": "test-federatedservice-status"
-            },
-          "spec": {
-            "clusterStatus": {
-               "clusterName": "test-cluster", 
-               "status": "cluster-status"
-                }
-            }
-        },
-        {
-          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
-          "kind": "DNSEndpoint",
-          "metadata": {
-            "name": "service-test-service"
-            },
-          "spec": {
-            "endpoints": [
-              {
-                "dnsName": "test-service.test-namespace.test-domain.svc.your.domain.name",
-                "recordTTL": 300,
-                "recordType": "A",
-                "targets": [
-                  "test-cluster"
-                  ]
-              }
-              ]
-            }
-          },
-        {
-          "apiVersion": "multiclusterdns.federation.k8s.io/v1alpha1",
-          "kind": "IngressDNSRecord",
-          "metadata": {
-            "name": "test-ingress"
-            },
-          "spec": {
-            "hosts": [
-              "ingress.example.com"
-              ],
-              "recordTTL": 300
-            }
-        },
-        {
-          "apiVersion": "scheduling.federation.k8s.io/v1alpha1",
-          "kind": "ReplicaSchedulingPreference",
-          "metadata": {
-            "name": "test-deployment"
-            },
-          "spec": {
-            "targetKind": "FederatedDeployment",
-            "totalReplicas": 10,
-            "rebalance": true,
-            "clusters": {
-              "cluster1": {
-                "weight": 2
-                },
-              "cluster2": {
-                "weight": 3
-                }
-              }
-            }
-        },
-        {
-          "apiVersion": "propagatedversions.core.federation.k8s.io/v1alpha1",
-          "kind": "PropagatedVersion",
-          "metadata": {
-            "name": "test-propagation"
-            },
-          "spec": {
-            "clusterVersions": {
-               "clusterName": "test-cluster",
-               "version": "0.0.10"  
-                } 
-            }
-        },
-        {
-          "apiVersion": "core.federation.k8s.io/v1alpha1",
-          "kind": "FederationConfig",
-          "metadata": {
-            "name": "test-federationconfig"
-            },
-          "spec": {
-            "scope": "Cluster",
-            "controllerDuration": {
-              "availableDelay": "20s",
-              "unavailableDelay": "60s",
-              "clusterMonitorPeriod": "40s"
-              },
-            "leaderElect": {
-              "leaseDuration": "15s",
-              "renewDeadline": "10s",
-              "retryPeriod": "5s",
-              "resourceLock": "configmaps"
-              },
-            "featureGates": [
-              {
-                "name": "PushReconciler",
-                "enabled": true
-                },
-              {
-                "name": "SchedulerPreferences",
-                "enabled": true
-              },
-             {
-               "name": "CrossClusterServiceDiscovery",
-               "enabled": true
-              },
-              {
-               "name": "FederatedIngress"
-               }
-            ]
-          },
-          "enabled": true
-        }
-      ]
+    alm-examples: '[{"apiVersion":"operator.kubefed.io/v1alpha1","kind":"Install","metadata":{"name":"example-install"},"spec":{"scope":"Namespaced"}}]'
     capabilities: Basic Install
-    categories: "OpenShift Optional, Integration & Delivery"
-    description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes Federation.
+    categories: OpenShift Optional, Integration & Delivery
     certified: "false"
-    containerImage: "quay.io/pmorie/kubefed-operator:v0.0.10"
+    containerImage: quay.io/pmorie/kubefed-operator:v0.0.10
     createdAt: "2019-01-01T00:00:00Z"
+    description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes
+      Federation.
     repository: https://github.com/pmorie/kubefed-operator
   name: kubefed-operator.v0.0.10
   namespace: placeholder
@@ -212,10 +17,45 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - kind: Cluster
+      name: clusters.clusterregistry.k8s.io
+      version: v1alpha1
+    - kind: ClusterPropagatedVersion
+      name: clusterpropagatedversions.core.federation.k8s.io
+      version: v1alpha1
+    - kind: DNSEndpoint
+      name: dnsendpoints.multiclusterdns.federation.k8s.io
+      version: v1alpha1
+    - kind: Domain
+      name: domains.multiclusterdns.federation.k8s.io
+      version: v1alpha1
+    - kind: FederatedCluster
+      name: federatedclusters.core.federation.k8s.io
+      version: v1alpha1
+    - kind: FederatedServiceStatus
+      name: federatedservicestatuses.core.federation.k8s.io
+      version: v1alpha1
+    - kind: FederatedTypeConfig
+      name: federatedtypeconfigs.core.federation.k8s.io
+      version: v1alpha1
+    - kind: FederationConfig
+      name: federationconfigs.core.federation.k8s.io
+      version: v1alpha1
+    - kind: IngressDNSRecord
+      name: ingressdnsrecords.multiclusterdns.federation.k8s.io
+      version: v1alpha1
+    - kind: PropagatedVersion
+      name: propagatedversions.core.federation.k8s.io
+      version: v1alpha1
+    - kind: ReplicaSchedulingPreference
+      name: replicaschedulingpreferences.scheduling.federation.k8s.io
+      version: v1alpha1
+    - kind: ServiceDNSRecord
+      name: servicednsrecords.multiclusterdns.federation.k8s.io
+      version: v1alpha1
     - kind: Install
       name: installs.operator.kubefed.io
       version: v1alpha1
-  displayName: Kubefed Operator
   description: |
     Kubernetes Federation is a tool to sync (aka "federate") a set of Kubernetes
     objects from a "source" into a set of other clusters. Common use-cases
@@ -468,7 +308,7 @@ spec:
         Propagation controller for FederatedTypeConfig "federation-test/deployments.extensions" is stopped
         customresourcedefinition "federateddeployments.types.federation.k8s.io" deleted
         federatedtypeconfig "federation-test/deployments.extensions" deleted
-  keywords: ['kubernetes', 'federation', 'hybrid', 'hybrid cloud', 'multi-cluster', 'cluster']
+  displayName: Kubefed Operator
   install:
     spec:
       deployments:
@@ -498,7 +338,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: kubefed-operator
-                image: REPLACE_IMAGE
+                image: quay.io/pmorie/kubefed-operator:v0.0.10
                 imagePullPolicy: Always
                 name: kubefed-operator
                 resources: {}
@@ -558,10 +398,22 @@ spec:
     type: MultiNamespace
   - supported: true
     type: AllNamespaces
-  maturity: alpha
-  provider:
-    name: Red Hat
+  keywords:
+  - kubernetes
+  - federation
+  - hybrid
+  - hybrid cloud
+  - multi-cluster
+  - cluster
+  links:
+  - name: Documentation
+    url: https://github.com/kubernetes-sigs/kubefed/tree/master/docs/
+  - name: Source Repository
+    url: https://github.com/kubernetes-sigs/kubefed/
   maintainers:
   - email: kubefed-operator@redhat.com
     name: Kubefed Team
+  maturity: alpha
+  provider:
+    name: Red Hat
   version: 0.0.10
