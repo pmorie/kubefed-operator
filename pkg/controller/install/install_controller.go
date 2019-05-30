@@ -128,6 +128,7 @@ func resourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer
 // by adding the federation scope env. variable for namespace scoped deployments
 func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string) mf.Transformer {
 	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name, "Scope", scope)
 		if scope == servingv1alpha1.InstallationScopeNamespaceScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "deployment":
@@ -135,13 +136,14 @@ func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string)
 					"spec", "template", "spec", "containers[0]", "env"); ok {
 					fse := map[string]string{"name": "DEFAULT_FEDERATION_SCOPE", "value": "Namespaced"}
 					envs = append(envs, fse)
+					reqLogger.Info("Transforming deployment resource for environment update. env: %s", envs)
 					err = unstructured.SetNestedSlice(u.Object, envs, "spec",
 						"template", "spec", "containers[0]", "env")
 					if err != nil {
-						reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
-
 						reqLogger.Info("Failed to update the environment")
 					}
+				} else {
+					reqLogger.Info("Cannot get the nested slice for env")
 				}
 			}
 		}
@@ -153,13 +155,15 @@ func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string)
 // for cluster scoped deployment
 func resourceNamespaceUpdate(scope servingv1alpha1.InstallationScope, ns, name string) mf.Transformer {
 	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name, "Scope", scope)
 		if scope == servingv1alpha1.InstallationScopeClusterScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "clusterrolebinding":
 				err := unstructured.SetNestedField(u.Object, ns, "subjects[0]", "namespace")
 				if err != nil {
-					reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
 					reqLogger.Info("Failed to set the namespace nested field")
+				} else {
+					reqLogger.Info("Added the namespace to the clusterrolebinding subjects element")
 				}
 			}
 		}
