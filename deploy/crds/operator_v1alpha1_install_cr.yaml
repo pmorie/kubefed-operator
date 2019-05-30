@@ -3,4 +3,4 @@ kind: Install
 metadata:
   name: example-install
 spec: 
-  scope: Namespaced
+  scope: Cluster

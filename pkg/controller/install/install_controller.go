@@ -116,6 +116,7 @@ func resourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer
 		if scope == servingv1alpha1.InstallationScopeNamespaceScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "clusterrole":
+                fallthrough
 			case "clusterrolebinding":
 				return nil
 			}
@@ -128,22 +129,32 @@ func resourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer
 // by adding the federation scope env. variable for namespace scoped deployments
 func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string) mf.Transformer {
 	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
-		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name, "Scope", scope)
+		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
 		if scope == servingv1alpha1.InstallationScopeNamespaceScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "deployment":
-				if envs, ok, err := unstructured.NestedSlice(u.Object,
-					"spec", "template", "spec", "containers[0]", "env"); ok {
-					fse := map[string]string{"name": "DEFAULT_FEDERATION_SCOPE", "value": "Namespaced"}
-					envs = append(envs, fse)
-					reqLogger.Info("Transforming deployment resource for environment update. env: %s", envs)
-					err = unstructured.SetNestedSlice(u.Object, envs, "spec",
-						"template", "spec", "containers[0]", "env")
-					if err != nil {
-						reqLogger.Info("Failed to update the environment")
+				if containers, ok, err := unstructured.NestedSlice(u.Object,
+					"spec", "template", "spec", "containers"); ok {
+					if envs, envOk, envErr := unstructured.NestedSlice(containers[0].(map[string]interface{}), "env"); envOk {
+						if !checkEnvExists(envs, "name", "DEFAULT_FEDERATION_SCOPE") {
+							fse := map[string]interface{}{"name": "DEFAULT_FEDERATION_SCOPE", "value": "Namespaced"}
+							envs = append(envs, fse)
+						}
+						reqLogger.Info("Transforming deployment resource for environment update - env; ", "envs", envs)
+						envErr = unstructured.SetNestedSlice(containers[0].(map[string]interface{}), envs, "env")
+						if envErr != nil {
+							reqLogger.Info("Failed to update the environment")
+						}
+						err = unstructured.SetNestedSlice(u.Object, containers, "spec", "template", "spec", "containers")
+						if err != nil {
+							reqLogger.Info("Failed to update the container array")
+						}
+					} else {
+						reqLogger.Info("Failed to get the env array")
 					}
 				} else {
-					reqLogger.Info("Cannot get the nested slice for env")
+					fooLogger := log.WithValues("namespace", ns, "name", name, "scope", scope, "error", err)
+					fooLogger.Info("Cannot get the nested slice for env")
 				}
 			}
 		}
@@ -151,19 +162,40 @@ func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string)
 	}
 }
 
+// This function checks if the fedearation scope environment variable exists in the env array
+func checkEnvExists(envs []interface{}, envKey, envName string) bool {
+	for _, envInterface := range envs {
+        env := envInterface.(map[string]interface{})
+		if val, ok := env[envKey]; ok {
+			if val == envName {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // This is a transform method that updates the namespace field of the clusterrolebinding resource
 // for cluster scoped deployment
 func resourceNamespaceUpdate(scope servingv1alpha1.InstallationScope, ns, name string) mf.Transformer {
 	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
-		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name, "Scope", scope)
+		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
 		if scope == servingv1alpha1.InstallationScopeClusterScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "clusterrolebinding":
-				err := unstructured.SetNestedField(u.Object, ns, "subjects[0]", "namespace")
-				if err != nil {
-					reqLogger.Info("Failed to set the namespace nested field")
+				if subjects, ok, err := unstructured.NestedSlice(u.Object, "subjects"); ok {
+					err = unstructured.SetNestedField(subjects[0].(map[string]interface{}), ns, "namespace")
+					if err != nil {
+						reqLogger.Info("Failed to set the namespace nested field")
+					} else {
+						reqLogger.Info("Added the namespace to the clusterrolebinding subjects element")
+						err = unstructured.SetNestedSlice(u.Object, subjects, "subjects")
+						if err != nil {
+							reqLogger.Info("Failed to update the subjects slice")
+						}
+					}
 				} else {
-					reqLogger.Info("Added the namespace to the clusterrolebinding subjects element")
+					reqLogger.Info("Failed to get subjects slice")
 				}
 			}
 		}
