@@ -9,7 +9,7 @@ COPY build/_output/bin/kubefed-operator ${OPERATOR}
 
 COPY deploy /deploy
 
-COPY build/bin /usr/local/bin
+#COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
