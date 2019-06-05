@@ -112,24 +112,31 @@ func (r *ReconcileInstall) Reconcile(request reconcile.Request) (reconcile.Resul
 
 // This is a transform method that ignores clusterrole and clusterrolebinding
 // resources for namespace scoped deployment of kubefed-operator
-func resourceScopeFilter(scope kubefedtv1alpha1.InstallationScope) mf.Transformer {
-	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
-		if scope == kubefedtv1alpha1.InstallationScopeNamespaceScoped {
-			switch strings.ToLower(u.GetKind()) {
-			case "clusterrole":
-				fallthrough
-			case "clusterrolebinding":
-				return nil
-			}
-		}
-		return u
+func resourceScopeFilter(resources []unstructured.Unstructured, scope kubefedtv1alpha1.InstallationScope) []unstructured.Unstructured {
+	if scope != kubefedtv1alpha1.InstallationScopeNamespaceScoped {
+		return resources
 	}
+
+	filtered := []unstructured.Unstructured{}
+
+	for i := range resources {
+		switch strings.ToLower(resources[i].GetKind()) {
+		case "clusterrole":
+			fallthrough
+		case "clusterrolebinding":
+			continue
+		default:
+			filtered = append(filtered, resources[i])
+		}
+	}
+
+	return filtered
 }
 
 // This is a transform method that updates the deployment resource's environment variables
 // by adding the federation scope env. variable for namespace scoped deployments
 func resourceEnvUpdate(scope kubefedtv1alpha1.InstallationScope, ns, name string) mf.Transformer {
-	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+	return func(u *unstructured.Unstructured) error {
 		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
 		if scope == kubefedtv1alpha1.InstallationScopeNamespaceScoped {
 			switch strings.ToLower(u.GetKind()) {
@@ -159,7 +166,7 @@ func resourceEnvUpdate(scope kubefedtv1alpha1.InstallationScope, ns, name string
 				}
 			}
 		}
-		return u
+		return nil
 	}
 }
 
@@ -179,7 +186,7 @@ func checkEnvExists(envs []interface{}, envKey, envName string) bool {
 // This is a transform method that updates the namespace field of the clusterrolebinding resource
 // for cluster scoped deployment
 func resourceNamespaceUpdate(scope kubefedtv1alpha1.InstallationScope, ns, name string) mf.Transformer {
-	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
+	return func(u *unstructured.Unstructured) error {
 		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
 		if scope == kubefedtv1alpha1.InstallationScopeClusterScoped {
 			switch strings.ToLower(u.GetKind()) {
@@ -200,17 +207,19 @@ func resourceNamespaceUpdate(scope kubefedtv1alpha1.InstallationScope, ns, name 
 				}
 			}
 		}
-		return u
+		return nil
 	}
 
 }
 
 // Apply the embedded resources
 func (r *ReconcileInstall) install(instance *kubefedtv1alpha1.Install) error {
+	// filter out resources we don't want
+	filteredResources := resourceScopeFilter(r.config.Resources, instance.Spec.Scope)
+	r.config.Resources = filteredResources
 	// Transform resources as appropriate
 	fns := []mf.Transformer{mf.InjectOwner(instance)}
 	fns = append(fns, mf.InjectNamespace(instance.Namespace))
-	fns = append(fns, resourceScopeFilter(instance.Spec.Scope))
 	fns = append(fns, resourceEnvUpdate(instance.Spec.Scope, instance.Namespace, instance.Name))
 	fns = append(fns, resourceNamespaceUpdate(instance.Spec.Scope, instance.Namespace, instance.Name))
 	r.config.Transform(fns...)
