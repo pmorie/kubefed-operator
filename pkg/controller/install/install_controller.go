@@ -3,8 +3,10 @@ package install
 import (
 	"context"
 	"flag"
+	"strings"
+
 	mf "github.com/jcrossley3/manifestival"
-	servingv1alpha1 "github.com/pmorie/kubefed-operator/pkg/apis/operator/v1alpha1"
+	kubefedtv1alpha1 "github.com/pmorie/kubefed-operator/pkg/apis/operator/v1alpha1"
 	"github.com/pmorie/kubefed-operator/version"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -16,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strings"
 )
 
 var (
@@ -53,7 +54,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource Install
-	err = c.Watch(&source.Kind{Type: &servingv1alpha1.Install{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &kubefedtv1alpha1.Install{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func (r *ReconcileInstall) Reconcile(request reconcile.Request) (reconcile.Resul
 	reqLogger.Info("Reconciling Install")
 
 	// Fetch the Install instance
-	instance := &servingv1alpha1.Install{}
+	instance := &kubefedtv1alpha1.Install{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -93,7 +94,7 @@ func (r *ReconcileInstall) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	stages := []func(*servingv1alpha1.Install) error{
+	stages := []func(*kubefedtv1alpha1.Install) error{
 		r.install,
 		r.configure,
 	}
@@ -111,12 +112,12 @@ func (r *ReconcileInstall) Reconcile(request reconcile.Request) (reconcile.Resul
 
 // This is a transform method that ignores clusterrole and clusterrolebinding
 // resources for namespace scoped deployment of kubefed-operator
-func resourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer {
+func resourceScopeFilter(scope kubefedtv1alpha1.InstallationScope) mf.Transformer {
 	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
-		if scope == servingv1alpha1.InstallationScopeNamespaceScoped {
+		if scope == kubefedtv1alpha1.InstallationScopeNamespaceScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "clusterrole":
-                fallthrough
+				fallthrough
 			case "clusterrolebinding":
 				return nil
 			}
@@ -127,10 +128,10 @@ func resourceScopeFilter(scope servingv1alpha1.InstallationScope) mf.Transformer
 
 // This is a transform method that updates the deployment resource's environment variables
 // by adding the federation scope env. variable for namespace scoped deployments
-func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string) mf.Transformer {
+func resourceEnvUpdate(scope kubefedtv1alpha1.InstallationScope, ns, name string) mf.Transformer {
 	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
 		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
-		if scope == servingv1alpha1.InstallationScopeNamespaceScoped {
+		if scope == kubefedtv1alpha1.InstallationScopeNamespaceScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "deployment":
 				if containers, ok, err := unstructured.NestedSlice(u.Object,
@@ -165,7 +166,7 @@ func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string)
 // This function checks if the fedearation scope environment variable exists in the env array
 func checkEnvExists(envs []interface{}, envKey, envName string) bool {
 	for _, envInterface := range envs {
-        env := envInterface.(map[string]interface{})
+		env := envInterface.(map[string]interface{})
 		if val, ok := env[envKey]; ok {
 			if val == envName {
 				return true
@@ -177,10 +178,10 @@ func checkEnvExists(envs []interface{}, envKey, envName string) bool {
 
 // This is a transform method that updates the namespace field of the clusterrolebinding resource
 // for cluster scoped deployment
-func resourceNamespaceUpdate(scope servingv1alpha1.InstallationScope, ns, name string) mf.Transformer {
+func resourceNamespaceUpdate(scope kubefedtv1alpha1.InstallationScope, ns, name string) mf.Transformer {
 	return func(u *unstructured.Unstructured) *unstructured.Unstructured {
 		reqLogger := log.WithValues("Instance.Namespace", ns, "Instance.Name", name)
-		if scope == servingv1alpha1.InstallationScopeClusterScoped {
+		if scope == kubefedtv1alpha1.InstallationScopeClusterScoped {
 			switch strings.ToLower(u.GetKind()) {
 			case "clusterrolebinding":
 				if subjects, ok, err := unstructured.NestedSlice(u.Object, "subjects"); ok {
@@ -205,7 +206,7 @@ func resourceNamespaceUpdate(scope servingv1alpha1.InstallationScope, ns, name s
 }
 
 // Apply the embedded resources
-func (r *ReconcileInstall) install(instance *servingv1alpha1.Install) error {
+func (r *ReconcileInstall) install(instance *kubefedtv1alpha1.Install) error {
 	// Transform resources as appropriate
 	fns := []mf.Transformer{mf.InjectOwner(instance)}
 	fns = append(fns, mf.InjectNamespace(instance.Namespace))
@@ -228,6 +229,6 @@ func (r *ReconcileInstall) install(instance *servingv1alpha1.Install) error {
 }
 
 // Set ConfigMap values from Install spec
-func (r *ReconcileInstall) configure(instance *servingv1alpha1.Install) error {
+func (r *ReconcileInstall) configure(instance *kubefedtv1alpha1.Install) error {
 	return nil
 }
