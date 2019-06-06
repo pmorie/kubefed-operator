@@ -10,7 +10,20 @@ function setup-infrastructure () {
   
   ./scripts/install-kubefed.sh -n ${NAMESPACE} -d ${LOCATION} &
 
-  sleep 45 
+  retries=50
+  until [[ $retries == 0 || $name == "federation-v2" ]]; do
+    name=$(kubectl get federationconfig -n ${NAMESPACE} -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [[ $name != "federation-v2" ]]; then
+        echo "Waiting for federationconfig to appear"
+        sleep 1
+        retries=$((retries - 1))
+    fi
+  done
+
+  if [ $retries == 0 ]; then
+    echo "Failed to retrieve FederationConfig resource"
+    exit 1
+  fi
 
   # ./scripts/download-binaries.sh
   
@@ -26,13 +39,14 @@ kubefedctl enable namespaces --federation-namespace=${NAMESPACE}
 
 kubefedctl enable configmaps --federation-namespace=${NAMESPACE}
 
+echo "Creating test-configmap resource"
 
 cat <<EOF | kubectl --namespace=federation-test apply -f -
 apiVersion: types.federation.k8s.io/v1alpha1
 kind: FederatedConfigMap
 metadata:
   name: test-configmap
-  namespace: federation-test
+  namespace: ${NAMESPACE}
 spec:
   template:
     data:
@@ -42,14 +56,23 @@ spec:
     - cluster1
 EOF
 
-sleep 40
-
 # check for test-configmap name
-if kubectl get configmap -n federation-test -o jsonpath="{.items[1].metadata.name}" | grep -q "test-configmap" ; then
-   echo "Configmap resource is federated successfully"
-else
-   exit 1
-fi
+retries=50
+until [[ $retries == 0 || $name == "test-configmap" ]]; do
+  name=$(kubectl get configmap -n ${NAMESPACE} -o jsonpath='{.items[1].metadata.name}' 2>/dev/null)
+  if [[ $name != "test-configmap" ]]; then
+      echo "Waiting for test-configmap to appear"
+      sleep 1
+      retries=$((retries - 1))
+  fi
+done
+
+ if [ $retries == 0 ]; then
+    echo "Failed to retrieve test-configmap resource"
+    exit 1
+ fi
+
+ echo "Configmap resource is federated successfully"
 
 }
 
