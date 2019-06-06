@@ -2,7 +2,7 @@
 
 # This script will create a namespace and deploy all the crds within the same
 # namespace
-# usage ./install.sh <location> <namespace>
+# usage ./install.sh -n <namespace> -d <location>
 
 set -e
  
@@ -10,6 +10,8 @@ set -e
 NAMESPACE=""
 LOCATION=""
 NAMESPACE_STR=""
+OLM_VERSION="0.10.0"
+OPERATOR="kubefed-operator"
 
 while getopts “n:d:” opt; do
     case $opt in
@@ -27,7 +29,7 @@ if test X"$NAMESPACE" != X; then
     NAMESPACE_STR="--namespace=${NAMESPACE}"
 fi
 
-# Install crds 
+# Install CRD
 kubectl apply -f ./deploy/crds/operator_v1alpha1_install_crd.yaml
 
 # Install CR
@@ -35,28 +37,30 @@ kubectl apply -f ./deploy/crds/operator_v1alpha1_install_cr.yaml $NAMESPACE_STR
 
 # Check if operator-sdk is installed or not and accordinlgy execute the command.
 if test X"$LOCATION" = Xlocal; then
-    operator-sdk &> /dev/null
-    if [ $? == 0 ]; then
-    # operator-sdk up local command doesn't install the requried CRD's
-    for f in ./deploy/crds/*_crd.yaml ; do     
-	kubectl apply -f "${f}" --validate=false 
-    done
-	operator-sdk up local $NAMESPACE_STR &
-    else
-	echo "Operator SDK is not installed."
-	exit 1
-    fi
+  operator-sdk &> /dev/null
+  if [ $? == 0 ]; then
+  # operator-sdk up local command doesn't install the requried CRD's
+  for f in ./deploy/crds/*_crd.yaml ; do     
+	  kubectl apply -f "${f}" --validate=false 
+  done
+	    operator-sdk up local $NAMESPACE_STR &
+  else
+	    echo "Operator SDK is not installed."
+	    exit 1
+  fi
 elif test X"$LOCATION" = Xapply; then
-    #TODO: change the location in the container stanza of the operator yaml
-    for f in ./deploy/crds/*_crd.yaml ; do     
-	kubectl apply -f "${f}" --validate=false 
-    done
-    echo "Deployed all the operator yamls for kubefed-operator in the cluster"
+  #TODO: change the location in the container stanza of the operator yaml
+  for f in ./deploy/*.yaml ; do       
+    kubectl apply -f "${f}" --validate=false $NAMESPACE_STR 
+  done
+  for f in ./deploy/crds/*_crd.yaml ; do     
+	  kubectl apply -f "${f}" --validate=false 
+  done
+  echo "Deployed all the operator yamls for kubefed-operator in the cluster"
+
 elif test X"$LOCATION" = Xolm-kube; then
 
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
-
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
+./scripts/kubernetes/olm-install.sh ${OLM_VERSION}
 
 echo "OLM is deployed in the cluster"
  
@@ -78,13 +82,13 @@ metadata:
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: kubefed-operator-sub
-  generateName: kubefed-operator-
+  name: ${OPERATOR}-sub
+  generateName: ${OPERATOR}-
   namespace: ${NAMESPACE}
 spec:
-  source: kubefed-operator
+  source: ${OPERATOR}
   sourceNamespace: ${NAMESPACE}
-  name: kubefed-operator
+  name: ${OPERATOR}
   channel: alpha
 EOF
 elif test X"$LOCATION" = Xolm-openshift; then
@@ -110,13 +114,13 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: kubefed-operator-sub
-  generateName: kubefed-operator-
+  name: ${OPERATOR}-sub
+  generateName: ${OPERATOR}-
   namespace: ${NAMESPACE}
 spec:
-  source: kubefed-operator
+  source: ${OPERATOR}
   sourceNamespace: ${NAMESPACE}
-  name: kubefed-operator
+  name: ${OPERATOR}
   channel: alpha
 EOF
    
