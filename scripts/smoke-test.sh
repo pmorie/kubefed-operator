@@ -26,6 +26,7 @@ kubefedctl enable namespaces --kubefed-namespace=${NAMESPACE}
 
 kubefedctl enable configmaps --kubefed-namespace=${NAMESPACE}
 
+kubectl create ns test-ns
 
 cat <<EOF | kubectl --namespace=test-ns apply -f -
 apiVersion: types.kubefed.k8s.io/v1beta1
@@ -46,7 +47,7 @@ cat <<EOF | kubectl --namespace=test-ns apply -f -
 apiVersion: types.kubefed.k8s.io/v1beta1
 kind: FederatedConfigMap
 metadata:
-  name: test-ns
+  name: test-configmap
   namespace: test-ns
 spec:
   template:
@@ -60,7 +61,7 @@ EOF
 sleep 40
 
 # check for test-configmap name
-if kubectl get configmap -n federation-test -o jsonpath="{.items[1].metadata.name}" | grep -q "test-configmap" ; then
+if kubectl get configmap -n test-ns -o jsonpath="{.items[0].metadata.name}" | grep -q "test-configmap" ; then
    echo "Configmap resource is federated successfully"
 else
    exit 1

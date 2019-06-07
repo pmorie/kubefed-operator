@@ -48,21 +48,24 @@ if test X"$LOCATION" = Xlocal; then
     fi
 elif test X"$LOCATION" = Xapply; then
     #TODO: change the location in the container stanza of the operator yaml
+    for f in ./deploy/*.yaml ; do
+        kubectl apply -f "${f}" --validate=false $NAMESPACE_STR
+    done
     for f in ./deploy/crds/*_crd.yaml ; do     
-	kubectl apply -f "${f}" --validate=false 
+	    kubectl apply -f "${f}" --validate=false 
     done
     echo "Deployed all the operator yamls for kubefed-operator in the cluster"
 elif test X"$LOCATION" = Xolm-kube; then
 
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
+    kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
 
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
+    kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
 
-echo "OLM is deployed in the cluster"
+    echo "OLM is deployed in the cluster"
  
-./hack/catalog.sh | kubectl apply $NAMESPACE_STR -f -
+    ./hack/catalog.sh | kubectl apply $NAMESPACE_STR -f -
 
-cat <<-EOF | kubectl apply -f -
+    cat <<-EOF | kubectl apply -f -
 ---
 apiVersion: v1
 kind: Namespace
@@ -87,11 +90,12 @@ spec:
   name: kubefed-operator
   channel: alpha
 EOF
+    
 elif test X"$LOCATION" = Xolm-openshift; then
 
-./hack/catalog.sh | oc apply $NAMESPACE_STR -f -
+    ./hack/catalog.sh | oc apply $NAMESPACE_STR -f -
 
-cat <<-EOF | kubectl apply -f -
+    cat <<-EOF | kubectl apply -f -
 ---
 apiVersion: v1
 kind: Namespace
