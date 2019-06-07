@@ -136,8 +136,8 @@ func resourceEnvUpdate(scope servingv1alpha1.InstallationScope, ns, name string)
 				if containers, ok, err := unstructured.NestedSlice(u.Object,
 					"spec", "template", "spec", "containers"); ok {
 					if envs, envOk, envErr := unstructured.NestedSlice(containers[0].(map[string]interface{}), "env"); envOk {
-						if !checkEnvExists(envs, "name", "DEFAULT_FEDERATION_SCOPE") {
-							fse := map[string]interface{}{"name": "DEFAULT_FEDERATION_SCOPE", "value": "Namespaced"}
+						if !checkEnvExists(envs, "name", "DEFAULT_KUBEFED_SCOPE") {
+							fse := map[string]interface{}{"name": "DEFAULT_KUBEFED_SCOPE", "value": "Namespaced"}
 							envs = append(envs, fse)
 						}
 						reqLogger.Info("Transforming deployment resource for environment update - env; ", "envs", envs)

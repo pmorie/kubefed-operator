@@ -57,6 +57,8 @@ fi
 echo "==========Setting up the infrastructure for kubefed operator============="
 setup-infrastructure
 
+sleep 40
+
 echo "==========Enabling resources=============="
 enable-resources
 
