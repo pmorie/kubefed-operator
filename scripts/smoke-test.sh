@@ -27,12 +27,27 @@ kubefedctl enable namespaces --kubefed-namespace=${NAMESPACE}
 kubefedctl enable configmaps --kubefed-namespace=${NAMESPACE}
 
 
-cat <<EOF | kubectl --namespace=federation-test apply -f -
+cat <<EOF | kubectl --namespace=test-ns apply -f -
+apiVersion: types.kubefed.k8s.io/v1beta1
+kind: FederatedNamespace
+metadata:
+  name: test-ns
+  namespace: test-ns
+spec:
+  template:
+    data:
+      key: value
+  placement:
+    clusters:
+    - name: cluster1
+EOF
+
+cat <<EOF | kubectl --namespace=test-ns apply -f -
 apiVersion: types.kubefed.k8s.io/v1beta1
 kind: FederatedConfigMap
 metadata:
-  name: test-configmap
-  namespace: federation-test
+  name: test-ns
+  namespace: test-ns
 spec:
   template:
     data:
