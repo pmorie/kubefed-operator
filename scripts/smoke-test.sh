@@ -10,7 +10,7 @@ function setup-infrastructure () {
   
   ./scripts/install-kubefed.sh -n ${NAMESPACE} -d ${LOCATION} &
 
-  sleep 45 
+  sleep 120
 
   # ./scripts/download-binaries.sh
   
@@ -19,16 +19,16 @@ function setup-infrastructure () {
 function enable-resources () {
 
 echo "Performing join operation using kubefedctl"
-kubefedctl join cluster1 --federation-namespace=${NAMESPACE} --host-cluster-context=cluster1 --host-cluster-name=cluster1 --cluster-context=cluster1 --add-to-registry
+kubefedctl join cluster1 --kubefed-namespace=${NAMESPACE} --host-cluster-context=cluster1 --host-cluster-name=cluster1 --cluster-context=cluster1
 
 echo "Enable FederatedTypeconfigs"
-kubefedctl enable namespaces --federation-namespace=${NAMESPACE}
+kubefedctl enable namespaces --kubefed-namespace=${NAMESPACE}
 
-kubefedctl enable configmaps --federation-namespace=${NAMESPACE}
+kubefedctl enable configmaps --kubefed-namespace=${NAMESPACE}
 
 
 cat <<EOF | kubectl --namespace=federation-test apply -f -
-apiVersion: types.federation.k8s.io/v1alpha1
+apiVersion: types.kubefed.k8s.io/v1beta1
 kind: FederatedConfigMap
 metadata:
   name: test-configmap
@@ -38,8 +38,8 @@ spec:
     data:
       key: value
   placement:
-    clusterNames:
-    - cluster1
+    clusters:
+    - name: cluster1
 EOF
 
 sleep 40
