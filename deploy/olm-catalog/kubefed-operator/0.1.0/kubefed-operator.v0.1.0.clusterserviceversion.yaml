@@ -248,10 +248,10 @@ spec:
       kind: ServiceDNSRecord
       name: servicednsrecords.multiclusterdns.kubefed.k8s.io
       version: v1alpha1
-    - description: Install
-      displayName: Install
-      kind: Install
-      name: installs.operator.kubefed.io
+    - description: KubeFed
+      displayName: KubeFed
+      kind: KubeFed
+      name: kubefeds.operator.kubefed.io
       version: v1alpha1
   description: |
     Kubernetes Federation is a tool to sync (aka "federate") a set of Kubernetes
@@ -287,8 +287,8 @@ spec:
 
 
     **Important Note**: To add federation capability to your namespace, you are
-    only required to install federation in the hosting cluster; there is no need
-    to install federation in the target clusters (and no effect gained from
+    only required to install kubefed in the hosting cluster; there is no need
+    to install kubefed in the target clusters (and no effect gained from
     doing so).
 
 
@@ -298,10 +298,10 @@ spec:
 
     ### Get the kubefedctl CLI tool
 
-    Before you use federation, you should ensure that you're using the binary
+    Before you use kubefed, you should ensure that you're using the binary
     for this version. You can get it from the releases on GitHub.
 
-        curl -Ls https://github.com/kubernetes-sigs/kubefed/releases/download/v0.0.10/kubefedctl.tgz | tar xz
+        curl -Ls https://github.com/kubernetes-sigs/kubefed/releases/download/v0.1.0-rc2/kubefedctl-0.1.0-rc2-linux-amd64.tgz | tar xz
 
     ### Joining Clusters
 
@@ -316,7 +316,7 @@ spec:
           --kubefed-namespace=<namespace> \        # namespace where federation is deployed
           -v 2
     
-    `kubefedctl join` creates `FederatedCluster` and `Cluster` resources named
+    `kubefedctl join` creates `KubeFedCluster` and `Cluster` resources named
     `cluster-name` to represent the joined cluster.
 
     `KubeFedCluster` resources pair `Cluster` resources to secrets holding
@@ -415,7 +415,7 @@ spec:
     namespaces`.
 
 
-    **Important Note**: Federation is currently installed **without** any
+    **Important Note**: KubeFed is currently installed **without** any
     `FederatedTypeConfig` resources created. You must run `kubefedctl enable`
     operation for each API type you want to add federation capability for.
 
@@ -511,7 +511,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: kubefed-operator
-                image: quay.io/pmorie/kubefed-operator:v0.0.10
+                image: quay.io/sohankunkerkar/kubefed-operator:v0.1.0-rc2
                 imagePullPolicy: Always
                 name: kubefed-operator
                 resources: {}

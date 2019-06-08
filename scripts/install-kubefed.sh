@@ -30,10 +30,10 @@ if test X"$NAMESPACE" != X; then
 fi
 
 # Install CRD
-kubectl apply -f ./deploy/crds/operator_v1alpha1_install_crd.yaml
+kubectl apply -f ./deploy/crds/operator_v1alpha1_kubefed_crd.yaml
 
 # Install CR
-kubectl apply -f ./deploy/crds/operator_v1alpha1_install_cr.yaml $NAMESPACE_STR
+kubectl apply -f ./deploy/crds/operator_v1alpha1_kubefed_cr.yaml $NAMESPACE_STR
 
 # Check if operator-sdk is installed or not and accordinlgy execute the command.
 if test X"$LOCATION" = Xlocal; then
@@ -62,11 +62,11 @@ elif test X"$LOCATION" = Xolm-kube; then
 
 ./scripts/kubernetes/olm-install.sh ${OLM_VERSION}
 
-echo "OLM is deployed in the cluster"
+    echo "OLM is deployed in the cluster"
  
-./hack/catalog.sh | kubectl apply $NAMESPACE_STR -f -
+    ./hack/catalog.sh | kubectl apply $NAMESPACE_STR -f -
 
-cat <<-EOF | kubectl apply -f -
+    cat <<-EOF | kubectl apply -f -
 ---
 apiVersion: v1
 kind: Namespace
@@ -91,11 +91,12 @@ spec:
   name: ${OPERATOR}
   channel: alpha
 EOF
+    
 elif test X"$LOCATION" = Xolm-openshift; then
 
-./hack/catalog.sh | oc apply $NAMESPACE_STR -f -
+    ./hack/catalog.sh | oc apply $NAMESPACE_STR -f -
 
-cat <<-EOF | kubectl apply -f -
+    cat <<-EOF | kubectl apply -f -
 ---
 apiVersion: v1
 kind: Namespace

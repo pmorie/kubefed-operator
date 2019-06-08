@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo ">> Uninstalling kubefed operator"
-NAMESPACE="${NAMESPACE:-federation-test}"
+NAMESPACE="${NAMESPACE:-kubefed-test}"
 CONFIGMAP="${CONFIGMAP:-test-configmap}"
 CLUSTERNAME="${CLUSTERNAME:-cluster1}"
 
