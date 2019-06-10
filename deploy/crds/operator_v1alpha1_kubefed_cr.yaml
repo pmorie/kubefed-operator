@@ -3,4 +3,4 @@ kind: KubeFed
 metadata:
   name: kubefed
 spec: 
-  scope: Cluster
+  scope: Namespaced

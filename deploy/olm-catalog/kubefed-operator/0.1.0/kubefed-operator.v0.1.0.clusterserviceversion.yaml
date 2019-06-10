@@ -8,14 +8,28 @@ metadata:
           "apiVersion": "core.kubefed.k8s.io/v1beta1",
           "kind": "KubeFedCluster",
           "metadata": {
-            "name": "cluster-name"
+            "name": "cluster-name",
+            "namespace": "<namespace>"
           },
           "spec": {
-            "apiEndpoint": "https://172.17.0.2:6443"
+            "apiEndpoint": "https://172.17.0.2:6443",
             "secretRef": {
               "name": "<name-of-secret>"
             }
           }
+        },
+        {
+          "apiVersion": "core.kubefed.k8s.io/v1alpha1",
+          "kind": "ClusterPropagatedVersion",
+          "metadata": {
+            "name": "test-propagation"
+            },
+          "spec": {
+            "clusterVersions": {
+               "clusterName": "test-cluster",
+               "version": "0.1.0"  
+                } 
+            }
         },
         {
           "apiVersion": "core.kubefed.k8s.io/v1beta1",
@@ -127,7 +141,7 @@ metadata:
             }
         },
         {
-          "apiVersion": "propagatedversions.core.kubefed.k8s.io/v1alpha1",
+          "apiVersion": "core.kubefed.k8s.io/v1alpha1",
           "kind": "PropagatedVersion",
           "metadata": {
             "name": "test-propagation"
@@ -135,7 +149,7 @@ metadata:
           "spec": {
             "clusterVersions": {
                "clusterName": "test-cluster",
-               "version": "0.0.10"  
+               "version": "0.1.0"  
                 } 
             }
         },
@@ -177,16 +191,27 @@ metadata:
             ]
           },
           "enabled": true
+        },
+        {
+          "apiVersion": "operator.kubefed.io/v1alpha1",
+          "kind": "KubeFed",
+          "metadata": {
+            "name": "kubefed"
+            },
+          "spec": {
+            "scope": "Namespaced"
+            }
         }
       ]
     capabilities: Basic Install
     categories: OpenShift Optional, Integration & Delivery
     certified: "false"
-    containerImage: quay.io/pmorie/kubefed-operator:v0.1.0
+    containerImage: quay.io/sohankunkerkar/kubefed-operator:v0.1.0-rc2
     createdAt: "2019-01-01T00:00:00Z"
     description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes
       Federation.
     repository: https://github.com/pmorie/kubefed-operator
+    support: Red Hat
   name: kubefed-operator.v0.1.0
   namespace: placeholder
 spec:
@@ -226,7 +251,7 @@ spec:
     - description: KubeFedConfig
       displayName: KubeFedConfig 
       kind: KubeFedConfig
-      name: federationconfigs.core.kubefed.k8s.io
+      name: kubefedconfigs.core.kubefed.k8s.io
       version: v1beta1
     - description: IngressDNSRecord
       displayName: IngressDNSRecord 

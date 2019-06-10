@@ -48,8 +48,10 @@ if test X"$LOCATION" = Xlocal; then
 	    echo "Operator SDK is not installed."
 	    exit 1
   fi
-elif test X"$LOCATION" = Xapply; then
+elif test X"$LOCATION" = Xcluster; then
   #TODO: change the location in the container stanza of the operator yaml
+  NAME=$(echo $NAMESPACE|awk '{$1=" "$1}1')
+  sed "s,namespace:.*,namespace:${NAME}," -i ./deploy/clusterrolebinding.yaml
   for f in ./deploy/*.yaml ; do       
     kubectl apply -f "${f}" --validate=false $NAMESPACE_STR 
   done
@@ -59,7 +61,8 @@ elif test X"$LOCATION" = Xapply; then
   echo "Deployed all the operator yamls for kubefed-operator in the cluster"
 
 elif test X"$LOCATION" = Xolm-kube; then
-
+NAME=$(echo $NAMESPACE|awk '{$1=" "$1}1')
+sed "s,namespace:.*,namespace:${NAME}," -i ./deploy/clusterrolebinding.yaml
 ./scripts/kubernetes/olm-install.sh ${OLM_VERSION}
 
     echo "OLM is deployed in the cluster"
@@ -78,6 +81,9 @@ kind: OperatorGroup
 metadata:
   name: kubefed
   namespace: ${NAMESPACE}
+spec:
+ targetNamespaces:
+   - ${NAMESPACE}
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -93,7 +99,8 @@ spec:
 EOF
     
 elif test X"$LOCATION" = Xolm-openshift; then
-
+NAME=$(echo $NAMESPACE|awk '{$1=" "$1}1')
+sed "s,namespace:.*,namespace:${NAME}," -i ./deploy/clusterrolebinding.yaml
     ./hack/catalog.sh | oc apply $NAMESPACE_STR -f -
 
     cat <<-EOF | kubectl apply -f -
