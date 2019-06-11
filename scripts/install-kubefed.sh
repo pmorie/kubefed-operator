@@ -10,16 +10,20 @@ set -e
 NAMESPACE=""
 LOCATION=""
 NAMESPACE_STR=""
+IMAGE_NAME=""
+OPERATOR_YAML_PATH="./deploy/operator.yaml"
 
-while getopts “n:d:” opt; do
+while getopts “n:d:i:” opt; do
     case $opt in
 	n) NAMESPACE=$OPTARG ;;
 	d) LOCATION=$OPTARG ;;
+    i) IMAGE_NAME=$OPTARG ;;
     esac
 done
 
 echo "NS=$NAMESPACE"
 echo "LOC=$LOCATION"
+echo "Operator Image Name=$IMAGE_NAME"
 
 if test X"$NAMESPACE" != X; then
     # create a namespace 
@@ -48,13 +52,18 @@ if test X"$LOCATION" = Xlocal; then
     fi
 elif test X"$LOCATION" = Xapply; then
     #TODO: change the location in the container stanza of the operator yaml
-    for f in ./deploy/*.yaml ; do
-        kubectl apply -f "${f}" --validate=false $NAMESPACE_STR
-    done
-    for f in ./deploy/crds/*_crd.yaml ; do     
-	    kubectl apply -f "${f}" --validate=false 
-    done
-    echo "Deployed all the operator yamls for kubefed-operator in the cluster"
+  for f in ./deploy/*.yaml ; do
+    if test X"$OPERATOR_YAML_PATH" = X"$f" ; then
+      echo "Reading the image name and sed it in"
+      sed "/image: /s|: .*|: ${IMAGE_NAME}|" $f | kubectl apply $NAMESPACE_STR --validate=false -f -
+    else
+      kubectl apply -f "${f}" --validate=false $NAMESPACE_STR
+    fi
+  done
+  for f in ./deploy/crds/*_crd.yaml ; do     
+	kubectl apply -f "${f}" --validate=false 
+  done
+  echo "Deployed all the operator yamls for kubefed-operator in the cluster"
 elif test X"$LOCATION" = Xolm-kube; then
 
     kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
