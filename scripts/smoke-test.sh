@@ -3,12 +3,12 @@
 NAMESPACE="${NAMESPACE:-federation-test}"
 LOCATION="${LOCATION:-local}"
 VERSION="${VERSION:-0.0.10}"
-
+IMAGE_NAME="${IMAGE_NAME:-"quay.io/anbhat/kubefed-operator:v0.1.0-rc2"}"
 function setup-infrastructure () {
 
   ./scripts/create-cluster.sh
   
-  ./scripts/install-kubefed.sh -n ${NAMESPACE} -d ${LOCATION} &
+  ./scripts/install-kubefed.sh -n ${NAMESPACE} -d ${LOCATION} -i ${IMAGE_NAME} &
 
   sleep 120
 
