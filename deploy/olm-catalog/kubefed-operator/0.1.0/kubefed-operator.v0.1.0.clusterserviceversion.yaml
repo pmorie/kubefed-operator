@@ -206,7 +206,7 @@ metadata:
     capabilities: Basic Install
     categories: OpenShift Optional, Integration & Delivery
     certified: "false"
-    containerImage: quay.io/sohankunkerkar/kubefed-operator:v0.1.0-rc2
+    containerImage: quay.io/sohankunkerkar/kubefed-operator:v0.1.0
     createdAt: "2019-01-01T00:00:00Z"
     description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes
       Federation.
@@ -536,7 +536,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: kubefed-operator
-                image: quay.io/sohankunkerkar/kubefed-operator:v0.1.0-rc2
+                image: quay.io/sohankunkerkar/kubefed-operator:v0.1.0
                 imagePullPolicy: Always
                 name: kubefed-operator
                 resources: {}
@@ -614,5 +614,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  replaces: kubefed-operator.v0.1.0
   version: 0.1.0
