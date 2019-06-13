@@ -8,7 +8,7 @@ function setup-infrastructure () {
 
   ./scripts/create-cluster.sh
   
-  ./scripts/install-kubefed.sh -n ${NAMESPACE} -d ${LOCATION} &
+  ./scripts/install-kubefed.sh -n ${NAMESPACE} -d ${LOCATION} -i ${IMAGE_NAME} &
 
   retries=70
   until [[ $retries == 0 || $name == "kubefed" ]]; do

@@ -12,16 +12,20 @@ LOCATION=""
 NAMESPACE_STR=""
 OLM_VERSION="0.10.0"
 OPERATOR="kubefed-operator"
+IMAGE_NAME=""
+OPERATOR_YAML_PATH="./deploy/operator.yaml"
 
-while getopts “n:d:” opt; do
+while getopts “n:d:i:” opt; do
     case $opt in
 	n) NAMESPACE=$OPTARG ;;
 	d) LOCATION=$OPTARG ;;
+    i) IMAGE_NAME=$OPTARG ;;
     esac
 done
 
 echo "NS=$NAMESPACE"
 echo "LOC=$LOCATION"
+echo "Operator Image Name=$IMAGE_NAME"
 
 if test X"$NAMESPACE" != X; then
     # create a namespace 
@@ -53,8 +57,13 @@ elif test X"$LOCATION" = Xcluster; then
   # replace namespace parameter value for the clusterrolebinding
   NAME=$(echo $NAMESPACE|awk '{$1=" "$1}1')
   sed "s,namespace:.*,namespace:${NAME}," -i ./deploy/role_binding.yaml
-  for f in ./deploy/*.yaml ; do       
-    kubectl apply -f "${f}" --validate=false $NAMESPACE_STR 
+  for f in ./deploy/*.yaml ; do
+   if test X"$OPERATOR_YAML_PATH" = X"$f" ; then
+      echo "Reading the image name and sed it in"
+      sed "/image: /s|: .*|: ${IMAGE_NAME}|" $f | kubectl apply $NAMESPACE_STR --validate=false -f -
+    else
+      kubectl apply -f "${f}" --validate=false $NAMESPACE_STR
+    fi
   done
   for f in ./deploy/crds/*_crd.yaml ; do     
 	  kubectl apply -f "${f}" --validate=false 
