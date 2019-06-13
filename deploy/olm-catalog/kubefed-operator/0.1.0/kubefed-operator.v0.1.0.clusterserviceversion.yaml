@@ -544,6 +544,16 @@ spec:
       permissions:
       - rules:
         - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - '*'
+          verbs:
+          - get
+          - create
+          - watch
+          - list
+          - update
+        - apiGroups:
           - ""
           resources:
           - pods
@@ -553,6 +563,7 @@ spec:
           - events
           - configmaps
           - secrets
+          - serviceaccounts
           verbs:
           - '*'
         - apiGroups:

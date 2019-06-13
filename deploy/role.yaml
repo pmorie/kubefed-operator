@@ -5,6 +5,16 @@ metadata:
   name: kubefed-operator
 rules:
 - apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - create
+  - watch
+  - list
+  - update
+- apiGroups:
   - ""
   resources:
   - pods
