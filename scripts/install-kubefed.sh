@@ -54,9 +54,6 @@ if test X"$LOCATION" = Xlocal; then
   fi
 elif test X"$LOCATION" = Xcluster; then
   #TODO: change the location in the container stanza of the operator yaml
-  # replace namespace parameter value for the clusterrolebinding
-  NAME=$(echo $NAMESPACE|awk '{$1=" "$1}1')
-  sed "s,namespace:.*,namespace:${NAME}," -i ./deploy/role_binding.yaml
   for f in ./deploy/*.yaml ; do
    if test X"$OPERATOR_YAML_PATH" = X"$f" ; then
       echo "Reading the image name and sed it in"
@@ -71,9 +68,6 @@ elif test X"$LOCATION" = Xcluster; then
   echo "Deployed all the operator yamls for kubefed-operator in the cluster"
 
 elif test X"$LOCATION" = Xolm-kube; then
-# replace namespace parameter value for the clusterrolebinding
-NAME=$(echo $NAMESPACE|awk '{$1=" "$1}1')
-sed "s,namespace:.*,namespace:${NAME}," -i ./deploy/role_binding.yaml
 ./scripts/kubernetes/olm-install.sh ${OLM_VERSION}
 
     echo "OLM is deployed in the cluster"
@@ -110,9 +104,6 @@ spec:
 EOF
     
 elif test X"$LOCATION" = Xolm-openshift; then
-# replace namespace parameter value for the clusterrolebinding
-NAME=$(echo $NAMESPACE|awk '{$1=" "$1}1')
-sed "s,namespace:.*,namespace:${NAME}," -i ./deploy/role_binding.yaml
     ./hack/catalog.sh | oc apply $NAMESPACE_STR -f -
 
     cat <<-EOF | kubectl apply -f -
