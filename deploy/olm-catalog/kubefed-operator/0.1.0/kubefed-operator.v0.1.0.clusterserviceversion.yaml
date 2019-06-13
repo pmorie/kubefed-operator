@@ -207,7 +207,7 @@ metadata:
     categories: OpenShift Optional, Integration & Delivery
     certified: "false"
     containerImage: quay.io/sohankunkerkar/kubefed-operator:v0.1.0
-    createdAt: "2019-01-01T00:00:00Z"
+    createdAt: "2019-06-14T00:00:00Z"
     description: Gain Hybrid Cloud capabilities between your clusters with Kubernetes
       Federation.
     repository: https://github.com/pmorie/kubefed-operator
@@ -345,7 +345,7 @@ spec:
     `cluster-name` to represent the joined cluster.
 
     `KubeFedCluster` resources pair `Cluster` resources to secrets holding
-    `KUBECONFIG` information that federation uses to connect to `Clusters`.
+    `KUBECONFIG` information that kubefed uses to connect to `Clusters`.
 
         kubectl get kubefedclusters -n <namespace>
         NAME            READY     AGE
@@ -627,16 +627,6 @@ spec:
               serviceAccountName: kubefed-operator
       permissions:
       - rules:
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - '*'
-          verbs:
-          - get
-          - create
-          - watch
-          - list
-          - update
         - apiGroups:
           - ""
           resources:
